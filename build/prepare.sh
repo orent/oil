@@ -24,7 +24,10 @@ configure() {
 build-python() {
   cd $PY27
   make clean
-  time make -j 7 CC=$CLANG CFLAGS='-O0'
+  # NOTE: Python passes a few flags, so we can't use CFLAGS here.  Is would
+  # have to be EXTRA_CFLAGS?
+  time make -j 7 #CFLAGS='-O0'
+  #time make -j 7 CFLAGS='-O0'
 }
 
 "$@"

@@ -151,6 +151,7 @@ readonly PREPROC_FLAGS=(
 )
 
 readonly INCLUDE_PATHS=(-I . -I Include)
+readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
 build() {
   local out=${1:-$PY27/ovm2}
@@ -173,9 +174,6 @@ build() {
 
   # So the OVM is ~600K smaller now.  1.97 MB for ./run.sh build-default.  1.65
   # MB for ./run.sh build-clang-small.
-
-  CC=$CLANG
-  #CC=gcc
 
   time $CC \
     "${INCLUDE_PATHS[@]}" \
