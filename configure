@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# POSIX shell script to detect target system properties.
+
+if cc build/detect-readline.c -l readline -o /dev/null; then
+  echo READLINE
+else
+  echo 'NO READLINE'
+fi
