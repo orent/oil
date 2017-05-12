@@ -61,16 +61,18 @@ ovm-main-func() {
   _OVM_RUN_SELF=0 $ovm || true
 
   echo ---
+  echo 'Running bytecode.zip'
+  echo ---
+
+  _OVM_RUN_SELF=0 $ovm _build/hello/bytecode.zip || true
+
+  # Doesn't work because of stdlib deps?
+  echo ---
   echo 'Running lib.pyc'
   echo ---
 
   _OVM_RUN_SELF=0 $ovm build/testdata/lib.pyc
 
-  echo ---
-  echo 'Running hello.zip'
-  echo ---
-
-  _OVM_RUN_SELF=0 $ovm _build/hello/bytecode.zip
 }
 
 

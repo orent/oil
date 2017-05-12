@@ -115,7 +115,6 @@ Modules/_sre.c
 Modules/_codecsmodule.c  
 Modules/_weakref.c
 Modules/zipimport.c  
-Modules/zlibmodule.c
 Modules/signalmodule.c
 '
 
@@ -185,15 +184,16 @@ build() {
     $(cat $abs_c_module_srcs) \
     Modules/ovm.c \
     -l m \
-    -l z \
     -l readline -l termcap \
     "$@" \
     || true
   popd
 
   # NOTE:
-  # zlibmodule: for zipimport
-  # readline/termcap module
+  # -l readline -l termcap -- for Python readline
+  # -l z , for zlibmodule.c, for zipimport
+  # I think zlib is a statically linked dependency only, but it's still better
+  # not to have it.
 }
 
 # build the optimized one.  Makefile uses -O3.
