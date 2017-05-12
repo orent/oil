@@ -51,6 +51,27 @@ oil-tar() {
   _tarball oil
 }
 
+# Test the different entry points.
+ovm-main-func() {
+  echo ---
+  echo 'Running nothing'
+  echo ---
+  local ovm=_build/hello/ovm-dbg
+
+  _OVM_RUN_SELF=0 $ovm || true
+
+  echo ---
+  echo 'Running lib.pyc'
+  echo ---
+
+  _OVM_RUN_SELF=0 $ovm build/testdata/lib.pyc
+
+  echo ---
+  echo 'Running hello.zip'
+  echo ---
+
+  _OVM_RUN_SELF=0 $ovm _build/hello/bytecode.zip
+}
 
 
 "$@"
