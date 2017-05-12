@@ -268,6 +268,7 @@ make-tar() {
   local c_module_srcs=_build/$app_name/c-module-srcs.txt
 
   tar --create --file $out \
+    LICENSE \
     Makefile \
     build/compile.sh \
     build/actions.sh \
@@ -279,6 +280,11 @@ make-tar() {
     $(cat $c_module_srcs | add-py27) \
     $(python-headers $c_module_srcs) \
     $(python-sources)
+
+  # TODO: Add Python licence at top level!
+
+  # Add INSTALL instructions.  Maybe move this to the top level of the repo.
+  tar --append --file $out --directory build INSTALL
 
   ls -l $out
 }
