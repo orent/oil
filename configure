@@ -1,9 +1,73 @@
 #!/bin/sh
 #
-# POSIX shell script to detect target system properties.
+# POSIX shell script to detect target system properties required by Oil.
+#
+# The only library Oil needs is readline.
+#
+# External utilities used: expr, cc
+#
+# TODO: Should be able to run this from another directory.
 
-if cc build/detect-readline.c -l readline -o /dev/null; then
-  echo READLINE
-else
-  echo 'NO READLINE'
-fi
+FLAG_prefix=''
+FLAG_with_readline=''  # Fail if it's not available.
+
+while true; do
+  case "$1" in
+    '')
+      break
+      ;;
+    --help)
+      echo HELP
+      exit 2
+      ;;
+
+    --with-readline)
+      FLAG_with_readline=1
+      echo "WITH READLINE"
+      ;;
+
+    # TODO: Maybe prefix only needs to be part of the install step?  I'm not
+    # sure if we need it for building anything.
+    --prefix=*)
+      FLAG_prefix=$(expr "$1" : '--prefix=\(.*\)')
+      echo "PREFIX [$FLAG_prefix]"
+      ;;
+    --prefix)
+      if test $# -eq 1; then
+        echo "--prefix requires an argument"
+        exit 2
+      fi
+      shift
+      FLAG_prefix=$1
+      echo PREFIX $FLAG_prefix
+      ;;
+    *)
+      echo 1>&2 "Invalid argument '$1'"
+      return 2
+      ;;
+  esac
+  shift
+done
+
+
+# Write a shell script to standard out with variables, or fail.
+detect_readline() {
+  if c build/detect-readline.c -l readline -o /dev/null; then
+    echo 'HAVE_READLINE=1'
+  else
+    if test "$FLAG_with_readline" = 1; then
+      echo 1>&2 'FATAL: --with-readline was passed but readline was not detected on the system.'
+      exit 1
+    fi
+    echo 'HAVE_READLINE=0'
+  fi
+}
+
+main() {
+  # The makefile or shell script will 'source detected-config.sh'?  And then it
+  # can pass -D to the compiler?
+  local out=detected-config.sh
+  detect_readline > $out
+}
+
+main "$@"
