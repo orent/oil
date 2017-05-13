@@ -1,0 +1,11 @@
+#!/bin/sh 
+#
+# POSIX shell script to install a build oil into the proper directory.
+# Distributed with the source tarball.
+
+# TODO:
+# - copy bin/oil with the right permissions.
+# - make dummy man page that points to HTML docs?
+#   - or just a cheat sheet for flags, usage, etc.
+
+echo TODO

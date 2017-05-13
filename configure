@@ -1,6 +1,7 @@
 #!/bin/sh
 #
 # POSIX shell script to detect target system properties required by Oil.
+# Distributed with the source tarball.
 #
 # The only library Oil needs is readline.
 #
@@ -8,7 +9,8 @@
 #
 # TODO: Should be able to run this from another directory.
 #
-# Other settings: LTO, PGO?
+# Other settings: LTO, PGO?  Consider moving prefix, LTO, PGO to build and
+# install steps.
 
 # Default value is /usr/bin/oil.  The user might want to change it to
 # /usr/local/bin/oil or $HOME/bin/oil.
@@ -53,6 +55,7 @@ done
 
 
 # Write a shell script to standard out with variables, or fail.
+
 detect_readline() {
   if cc build/detect-readline.c -l readline -o /dev/null; then
     echo 'HAVE_READLINE=1'
@@ -67,6 +70,10 @@ detect_readline() {
   echo "PREFIX=$FLAG_prefix"
 }
 
+
+# Another way of working: set detected-config.mk ?
+# And set the default target as oil_readline, oil_no_readline, oil_lto,
+# oil_pgo, etc.?
 main() {
   # The makefile or shell script will 'source detected-config.sh'?  And then it
   # can pass -D to the compiler?
