@@ -184,13 +184,14 @@ build() {
     $(cat $abs_c_module_srcs) \
     Modules/ovm.c \
     -l m \
-    -l readline -l termcap \
+    -l readline \
     "$@" \
     || true
   popd
 
   # NOTE:
-  # -l readline -l termcap -- for Python readline
+  # -l readline -l termcap -- for Python readline.  Hm it builds without -l
+  # termcap.
   # -l z , for zlibmodule.c, for zipimport
   # I think zlib is a statically linked dependency only, but it's still better
   # not to have it.
