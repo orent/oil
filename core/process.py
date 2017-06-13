@@ -501,9 +501,9 @@ class JobState:
     # you can wait for it once?
     self.jobs = {}
 
-  def Register(self, job):
+  def Register(self, pid, waitable):
     """ Used by 'sleep 1&' """
-    self.jobs[pid] = job
+    self.jobs[pid] = waitable
     # TODO: Use the waiter?
 
   def List(self):
@@ -515,7 +515,15 @@ class JobState:
     #                        Wait for ONE.
 
     #self.callbacks[pid]
-    pass
+    for pid, waitable in self.jobs.iteritems():
+      print(pid, waitable)
+
+  def AllDone(self):
+    """Test if all jobs are done.  Used by 'wait' builtin."""
+    for waitable in self.jobs.itervalues():
+      if waitable.state != ProcessState.Done:
+        return False
+    return True
 
   def WhenDone(self, pid):
     """Process and Pipeline can call this."""

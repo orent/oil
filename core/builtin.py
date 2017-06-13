@@ -478,9 +478,17 @@ def _Wait(argv, waiter, job_state):
     return 0
 
   if not args:
+    log('wait all')
     # TODO: get all background jobs from JobState?
-    print('wait all')
-    # wait for everything
+    i = 0
+    while True:
+      if not waiter.Wait():
+        break  # nothing to wait for
+      i += 1
+      if job_state.AllDone():
+        break
+
+    log('waited for %d processes', i)
     return 0
 
   # Get list of jobs.  Then we need to check if they are ALL stopped.
