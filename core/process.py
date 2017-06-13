@@ -557,6 +557,7 @@ class Waiter:
   """
   def __init__(self):
     self.callbacks = {}  # pid -> callback
+    self.last_status = 127  # wait -n error code
 
   def Register(self, pid, callback):
     self.callbacks[pid] = callback
@@ -593,5 +594,6 @@ class Waiter:
 
     callback = self.callbacks.pop(pid)
     callback(pid, status)
+    self.last_status = status  # for wait -n
 
     return True  # caller should keep waiting

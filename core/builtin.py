@@ -472,10 +472,13 @@ def _Wait(argv, waiter, job_state):
       raise AssertionError
 
   if opt_n:
-    waiter.Wait()
-    print('wait next')
-    # TODO: Get rid of args?
-    return 0
+    # wait -n returns the exit status of the process.  But how do you know
+    # WHICH process?  That doesn't seem useful.
+    log('wait next')
+    if waiter.Wait():
+      return waiter.last_status
+    else:
+      return 127  # nothing to wait for
 
   if not args:
     log('wait all')
