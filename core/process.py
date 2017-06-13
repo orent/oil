@@ -517,6 +517,10 @@ class JobState:
     #self.callbacks[pid]
     pass
 
+  def WhenDone(self, pid):
+    """Process and Pipeline can call this."""
+    log('JobState WhenDone %d', pid)
+
 
 class Waiter:
   """A capability to wait for processes.

@@ -543,6 +543,10 @@ class Executor(object):
     if node.tag == command_e.Pipeline:
       raise NotImplementedError
     else:
+      # Problem: to get the 'set -b' behavior of immediate notifications, we
+      # have to register SIGCHLD.  But then that introduces race conditions.
+      # If we haven't called Register yet, then we won't know who to notify.
+
       #log('job state %s', self.job_state)
       p = self._MakeProcess(node, job_state=self.job_state)
       pid = p.Start()
