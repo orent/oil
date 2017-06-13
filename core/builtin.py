@@ -507,12 +507,13 @@ def _Wait(argv, waiter, job_state):
       util.error('Invalid argument %r', a)
       return 1
 
-    waitable = job_state.jobs.get(jid)
-    if waitable is None:
+    job = job_state.jobs.get(jid)
+    if job is None:
       util.error('No such job: %s', jid)
       return 127
 
-    status = waitable.WaitUntilDone(waiter)
+    # TODO: This could be pipe_status?
+    status = job.WaitUntilDone(waiter)
 
   return status
 

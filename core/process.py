@@ -298,7 +298,18 @@ class _HereDocWriterThunk(Thunk):
 ProcessState = util.Enum('ProcessState', """Init Done""".split())
 
 
-class Process(object):
+class Job(object):
+  def __init__(self):
+    self.state = ProcessState.Init
+
+  def State(self):
+    return self.state
+
+  def WaitUntilDone(self, waiter):
+    raise NotImplementedError
+
+
+class Process(Job):
   """A process to run.
 
   TODO: Should we make it clear that this is a FOREGROUND process?  A
@@ -312,6 +323,7 @@ class Process(object):
       thunk: Thunk instance
       job_state: notify upon completion
     """
+    Job.__init__(self)
     assert not isinstance(thunk, list), thunk
     self.thunk = thunk
     self.job_state = job_state
@@ -323,7 +335,6 @@ class Process(object):
 
     self.pid = -1
     self.status = -1
-    self.state = ProcessState.Init
 
   def __repr__(self):
     return '<Process %s>' % self.thunk
@@ -370,7 +381,7 @@ class Process(object):
     return self.status
 
   def WhenDone(self, pid, status):
-    log('WhenDone %d %d', pid, status)
+    #log('WhenDone %d %d', pid, status)
     assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
     self.status = status
     self.state = ProcessState.Done
@@ -394,7 +405,7 @@ class Process(object):
     return self.WaitUntilDone(waiter)
 
 
-class Pipeline(object):
+class Pipeline(Job):
   """A pipeline of processes to run.
 
   Cases we handle:
@@ -404,12 +415,12 @@ class Pipeline(object):
   foo | bar | read v
   """
   def __init__(self, job_state=None):
+    Job.__init__(self)
     self.job_state = job_state
     self.procs = []
     self.pids = []  # pids in order
     self.pipe_status = []  # status in order
-    self.status = []  # for 'wait' jobs
-    self.state = ProcessState.Init
+    self.status = -1  # for 'wait' jobs
 
   def __repr__(self):
     return '<Pipeline %s>' % ' '.join(repr(p) for p in self.procs)
@@ -457,6 +468,13 @@ class Pipeline(object):
 
     return self.pipe_status
 
+  def WaitUntilDone(self, waiter):
+    # TODO: Copy the above
+    #
+    # Needs to return status
+    # Should that be runtime.job_status
+    pass
+
   def WhenDone(self, pid, status):
     #log('Pipeline WhenDone %d %d', pid, status)
     i = self.pids.index(pid)
@@ -469,31 +487,6 @@ class Pipeline(object):
         self.job_state.WhenDone(self.pipe_status[-1])
 
 
-# Waitable interface?  User can wait on Job.  But shell always waits on Process
-# and Pipeline.
-
-class Job:
-  def __init__(self, thunk, waiter):
-    # Thunk ensures it's UNEVALUATED in the parent.  See tests.
-    self.thunk = thunk
-    self.waiter = waiter
-    self.state = ProcessState.Init
-    self.status = -1
-
-  def Start(self):
-    p = Process(thunk)
-    pid = p.Start()
-
-    # NOTE: The JOB should be notified?  Not the process?
-    self.waiter.Register(pid, self.WhenDone)
-
-  def WhenDone(self, pid, status):
-    self.status = status
-    self.state = ProcessState.Done
-    # TODO: Update JobState?
-    # Every Job should be created with a job_state to update?
-
-
 class JobState:
   """Global list of jobs, used by a few builtins."""
 
@@ -503,10 +496,9 @@ class JobState:
     # you can wait for it once?
     self.jobs = {}
 
-  def Register(self, pid, waitable):
-    """ Used by 'sleep 1&' """
-    self.jobs[pid] = waitable
-    # TODO: Use the waiter?
+  def Register(self, pid, job):
+    """ Used by 'sleep 1 &' """
+    self.jobs[pid] = job
 
   def List(self):
     """Used by the 'jobs' builtin."""
@@ -517,26 +509,27 @@ class JobState:
     #                        Wait for ONE.
 
     #self.callbacks[pid]
-    for pid, waitable in self.jobs.iteritems():
-      print(pid, waitable)
+    for pid, job in self.jobs.iteritems():
+      print(pid, job)
 
   def IsDone(self, jid):
     """Test if a specific job is done."""
     if jid not in self.jobs:
       return False, False
-    waitable = self.jobs[jid]
-    return True, waitable.state == ProcessState.Done
+    job = self.jobs[jid]
+    return True, job.State() == ProcessState.Done
 
   def AllDone(self):
     """Test if all jobs are done.  Used by 'wait' builtin."""
-    for waitable in self.jobs.itervalues():
-      if waitable.state != ProcessState.Done:
+    for job in self.jobs.itervalues():
+      if job.State() != ProcessState.Done:
         return False
     return True
 
   def WhenDone(self, pid):
     """Process and Pipeline can call this."""
     log('JobState WhenDone %d', pid)
+    # TODO: Update the list
 
 
 class Waiter:
