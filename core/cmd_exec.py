@@ -550,6 +550,7 @@ class Executor(object):
       #log('job state %s', self.job_state)
       p = self._MakeProcess(node, job_state=self.job_state)
       pid = p.Start()
+      self.mem.last_job_id = pid  # for $!
       self.job_state.Register(pid, p)
       self.waiter.Register(pid, p.WhenDone)
       log('Started background job with pid %d', pid)

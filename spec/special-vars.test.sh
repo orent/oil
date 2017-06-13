@@ -70,8 +70,7 @@ exit 3  # make sure we got here
 # status: 3
 # N-I dash status: 1
 
-### Background PID $!
-# Just test that it has decimal digits
+### Background PID $! looks like a PID
 sleep 0.01 &
 pid=$!
 wait

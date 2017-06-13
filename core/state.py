@@ -131,7 +131,9 @@ class Mem(object):
     self.var_stack = [top]
     self.argv0 = argv0
     self.argv_stack = [_ArgFrame(argv)]
+
     self.last_status = 0  # Mutable public variable
+    self.last_job_id = -1  # Uninitialized value mutable public variable
 
     # Done ONCE on initialization
     self.root_pid = os.getpid()
@@ -206,7 +208,12 @@ class Mem(object):
   #
 
   def GetSpecialVar(self, op_id):
-    if op_id == Id.VSub_QMark:  # $?
+    if op_id == Id.VSub_Bang:  # $!
+      n = self.last_job_id
+      if n == -1:
+        return runtime.Undef()  # could be an error
+
+    elif op_id == Id.VSub_QMark:  # $?
       # TODO: Have to parse status somewhere.
       # External commands need WIFEXITED test.  What about subshells?
       n = self.last_status
