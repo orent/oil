@@ -505,7 +505,7 @@ def _Wait(argv, waiter, job_state):
       jid = int(a)
     except ValueError:
       util.error('Invalid argument %r', a)
-      return 1
+      return 127
 
     job = job_state.jobs.get(jid)
     if job is None:

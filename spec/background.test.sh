@@ -10,6 +10,27 @@
 #   bg
 #   %1 -- current job
 
+### wait with nothing to wait for
+wait
+# status: 0
+
+### wait -n with nothing to wait for
+# The 127 is STILL overloaded.  Copying bash for now.
+wait -n
+# status: 127
+# OK dash status: 2
+# OK mksh status: 1
+
+### wait with invalid job ID
+wait %nonexistent
+# status: 127
+# OK dash status: 2
+
+### wait with invalid PID
+wait %nonexistent
+# status: 127
+# OK dash status: 2
+
 ### Builtin in background
 echo async &
 wait
