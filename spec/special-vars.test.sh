@@ -73,9 +73,10 @@ exit 3  # make sure we got here
 ### Background PID $!
 # Just test that it has decimal digits
 sleep 0.01 &
-echo $! | egrep '[0-9]+' >/dev/null
-echo status=$?
+pid=$!
 wait
+echo $pid | egrep '[0-9]+' >/dev/null
+echo status=$?
 # stdout: status=0
 
 ### $PPID
