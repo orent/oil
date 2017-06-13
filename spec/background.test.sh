@@ -48,12 +48,12 @@ echo status=$?
 # stdout: status=99
 
 ### Wait sets PIPESTATUS
-echo hi | exit 99 &
+{ echo hi; exit 55; } | exit 99 &
 echo "pipestatus=${PIPESTATUS[@]}"
 wait $!
 echo status=$?
 echo "pipestatus=${PIPESTATUS[@]}"
-# stdout-json: "pipestatus=\nstatus=99\npipestatus=0 99\n"
+# stdout-json: "pipestatus=\nstatus=99\npipestatus=55 99\n"
 # BUG bash stdout-json: "pipestatus=\nstatus=99\npipestatus=0\n"
 # N-I mksh stdout-json: "pipestatus=0\nstatus=99\npipestatus=0\n"
 # N-I dash stdout-json: ""
