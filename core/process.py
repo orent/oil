@@ -518,6 +518,13 @@ class JobState:
     for pid, waitable in self.jobs.iteritems():
       print(pid, waitable)
 
+  def IsDone(self, jid):
+    """Test if a specific job is done."""
+    if jid not in self.jobs:
+      return False, False
+    waitable = self.jobs[jid]
+    return True, waitable.state == ProcessState.Done
+
   def AllDone(self):
     """Test if all jobs are done.  Used by 'wait' builtin."""
     for waitable in self.jobs.itervalues():

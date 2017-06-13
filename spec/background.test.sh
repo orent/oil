@@ -44,6 +44,15 @@ wait $pid2
 echo "status=$?"
 # stdout-json: "status=9\nstatus=7\n"
 
+### Wait on multiple specific IDs returns last status
+{ sleep 0.08; exit 8; } &
+{ sleep 0.09; exit 9; } &
+{ sleep 0.07; exit 7; } &
+wait %1 %2 %3
+echo "status=$?"  # third job I think
+# stdout: status=7
+# BUG mksh stdout: status=127
+
 ### wait -n
 { sleep 0.09; exit 9; } &
 { sleep 0.07; exit 7; } &

@@ -495,12 +495,28 @@ def _Wait(argv, waiter, job_state):
     return 0
 
   # Get list of jobs.  Then we need to check if they are ALL stopped.
-  for a in args:
-    print('wait %s' % a)
-    # parse pid
-    # parse job spec
+  # Returns the exit code of the last one on the COMMAND LINE, not the exit
+  # code of last one to FINSIH.
 
-  return 0
+  status = 127
+  for a in args:
+    # NOTE: osh doesn't accept 'wait %1' yet
+    try:
+      jid = int(a)
+    except ValueError:
+      util.error('Invalid argument %r', a)
+      return 1
+
+    while True:
+      if not waiter.Wait():
+        break  # nothing to wait for
+      exists, is_done = job_state.IsDone(jid)
+      if not exists:
+        util.error('No such job: %s', jid)
+      status = waiter.last_status
+      if is_done:
+        break
+  return status
 
 
 def _Jobs(argv, job_state):
