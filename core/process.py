@@ -408,6 +408,7 @@ class Pipeline(object):
     self.procs = []
     self.pids = []  # pids in order
     self.pipe_status = []  # status in order
+    self.status = []  # for 'wait' jobs
     self.state = ProcessState.Init
 
   def __repr__(self):
@@ -462,6 +463,7 @@ class Pipeline(object):
     assert i != -1, 'Unexpected PID %d' % pid
     self.pipe_status[i] = status
     if all(status != -1 for status in self.pipe_status):
+      self.status = self.pipe_status[-1]  # last one
       self.state = ProcessState.Done
       if self.job_state:
         self.job_state.WhenDone(self.pipe_status[-1])
