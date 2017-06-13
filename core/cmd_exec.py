@@ -262,7 +262,7 @@ class Executor(object):
       status = builtin._Exit(argv)
 
     elif builtin_id == EBuiltin.WAIT:
-      status = builtin._Wait(argv, self.waiter, self.job_state)
+      status = builtin._Wait(argv, self.waiter, self.job_state, self.mem)
 
     elif builtin_id == EBuiltin.JOBS:
       status = builtin._Jobs(argv, self.job_state)
@@ -543,9 +543,14 @@ class Executor(object):
         self.fd_state.PopAndForget()
 
   def _RunJobInBackground(self, node):
-    """
-    """
-    # Special case for pipeline?
+    # Special case for pipeline.  There is some evidence here:
+    # https://www.gnu.org/software/libc/manual/html_node/Launching-Jobs.html#Launching-Jobs
+    #
+    #  "You can either make all the processes in the process group be children
+    #  of the shell process, or you can make one process in group be the
+    #  ancestor of all the other processes in that group. The sample shell
+    #  program presented in this chapter uses the first approach because it
+    #  makes bookkeeping somewhat simpler."
     if node.tag == command_e.Pipeline:
       pi = self._MakePipeline(node, job_state=self.job_state)
       job_id = pi.Start(self.waiter)

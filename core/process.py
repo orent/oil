@@ -306,6 +306,11 @@ class Job(object):
     return self.state
 
   def WaitUntilDone(self, waiter):
+    """
+    Returns:
+      An int for a process
+      A list of ints for a pipeline
+    """
     raise NotImplementedError
 
 

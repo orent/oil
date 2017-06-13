@@ -430,7 +430,7 @@ def _Exit(argv):
 
 import getopt
 
-def _Wait(argv, waiter, job_state):
+def _Wait(argv, waiter, job_state, mem):
   """
   wait: wait [-n] [id ...]
       Wait for job completion and return exit status.
@@ -512,8 +512,12 @@ def _Wait(argv, waiter, job_state):
       util.error('No such job: %s', jid)
       return 127
 
-    # TODO: This could be pipe_status?
-    status = job.WaitUntilDone(waiter)
+    st = job.WaitUntilDone(waiter)
+    if isinstance(st, list):
+      status = st[-1]
+      mem.SetGlobalArray('PIPESTATUS', [str(p) for p in st])
+    else:
+      status = st
 
   return status
 

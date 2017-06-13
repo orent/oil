@@ -47,6 +47,18 @@ wait $!
 echo status=$?
 # stdout: status=99
 
+### Wait sets PIPESTATUS
+echo hi | exit 99 &
+echo "pipestatus=${PIPESTATUS[@]}"
+wait $!
+echo status=$?
+echo "pipestatus=${PIPESTATUS[@]}"
+# stdout-json: "pipestatus=\nstatus=99\npipestatus=0 99\n"
+# BUG bash stdout-json: "pipestatus=\nstatus=99\npipestatus=0\n"
+# N-I mksh stdout-json: "pipestatus=0\nstatus=99\npipestatus=0\n"
+# N-I dash stdout-json: ""
+# N-I dash status: 2
+
 ### Brace group in background, wait all
 { sleep 0.09; exit 9; } &
 { sleep 0.07; exit 7; } &
