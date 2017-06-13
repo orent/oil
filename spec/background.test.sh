@@ -46,9 +46,12 @@ echo "status=$?"
 
 ### Wait on multiple specific IDs returns last status
 { sleep 0.08; exit 8; } &
+jid1=$1
 { sleep 0.09; exit 9; } &
+jid2=$2
 { sleep 0.07; exit 7; } &
-wait %1 %2 %3
+jid3=$3
+wait $jid1 $jid2 $jid3  # NOTE: not using %1 %2 %3 syntax on purpose
 echo "status=$?"  # third job I think
 # stdout: status=7
 # BUG mksh stdout: status=127
