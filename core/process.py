@@ -446,8 +446,7 @@ class Pipeline(Job):
 
     self.procs.append(p)
 
-  def Run(self, waiter):
-    """Run this pipeline synchronously."""
+  def Start(self, waiter):
     for i, proc in enumerate(self.procs):
       pid = proc.Start()
       self.pids.append(pid)
@@ -457,7 +456,9 @@ class Pipeline(Job):
       # NOTE: This has to be done after every fork() call.  Otherwise processes
       # will have descriptors from non-adjacent pipes.
       proc.ClosePipe()
+    return self.pids[-1]  # the last PID is the job ID
 
+  def WaitUntilDone(self, waiter):
     while True:
       #log('WAIT pipeline')
       if not waiter.Wait():
@@ -468,12 +469,10 @@ class Pipeline(Job):
 
     return self.pipe_status
 
-  def WaitUntilDone(self, waiter):
-    # TODO: Copy the above
-    #
-    # Needs to return status
-    # Should that be runtime.job_status
-    pass
+  def Run(self, waiter):
+    """Run this pipeline synchronously."""
+    self.Start(waiter)
+    return self.WaitUntilDone(waiter)
 
   def WhenDone(self, pid, status):
     #log('Pipeline WhenDone %d %d', pid, status)

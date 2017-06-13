@@ -429,14 +429,20 @@ class Executor(object):
       out_env[name] = val.s
     self.mem.PopTemp()
 
-  def _RunPipeline(self, node):
-    # NOTE: First or last one can use the "main" shell thread.  Doesn't have to
-    # run in subshell.  Although I guess it's simpler if it always does.
-    pi = process.Pipeline()
+  def _MakePipeline(self, node, job_state=None):
+    # NOTE: First or last one could use the "main" shell thread.  Doesn't have
+    # to run in subshell.  Although I guess it's simpler if it always does.
+    # I think bash has an option to control this?  echo hi | read x; should
+    # test it.
+    pi = process.Pipeline(job_state=job_state)
 
     for child in node.children:
       p = self._MakeProcess(child)  # NOTE: evaluates, does errexit guard
       pi.Add(p)
+    return pi
+
+  def _RunPipeline(self, node):
+    pi = self._MakePipeline(node)
 
     #print(pi)
 
@@ -541,7 +547,12 @@ class Executor(object):
     """
     # Special case for pipeline?
     if node.tag == command_e.Pipeline:
-      raise NotImplementedError
+      pi = self._MakePipeline(node, job_state=self.job_state)
+      job_id = pi.Start(self.waiter)
+      self.mem.last_job_id = job_id  # for $!
+      self.job_state.Register(job_id, pi)
+      log('Started background pipeline with job ID %d', job_id)
+
     else:
       # Problem: to get the 'set -b' behavior of immediate notifications, we
       # have to register SIGCHLD.  But then that introduces race conditions.
@@ -554,7 +565,7 @@ class Executor(object):
       self.job_state.Register(pid, p)
       self.waiter.Register(pid, p.WhenDone)
       log('Started background job with pid %d', pid)
-      return 0
+    return 0
 
   def _Execute(self, node, fork_external=True):
     """
