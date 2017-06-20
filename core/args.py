@@ -31,23 +31,49 @@ optparse:
   - eval implicitly joins it args, we don't want to do that
     - how about strict-builtin-syntax ?
 
+spec = args.Spec()
+# maybe: spec.RespectDoubleDash(False)  # for echo?
 
-Usage:
+spec.FlagForOptionOn('-o')
+spec.FlagForOptionOff('+o')  # -s -u for shopt
 
-spec = arg.Spec()
-args = spec.parse(argv)
+spec.Flag('-c', None, args.Str)  # opt.c
+spec.Flag('-i', None, args.Str)
+spec.Flag(None, '--debug-spans')
+spec.Flag(None, '--debug-spans')
 
-  args.names
-  args.rest
-  args.n
-  args.v
+# TODO: repeated flags for --trace?
 
-  opts.v
-  opts.args
+spec.Option('u', 'nounset')  # -o nounset
+spec.Option(None, 'pipefail')
+
+# Function to call with a boolean
+spec.Option('e', 'errexit', callback=exec_opts.errexit.Set)
+
+args = spec.Parse(argv)  # how to set?
+
+flag = Flags()  # dumb thing
+exec_opts = ExecOpts()
+rest = []
+i = spec.Parse(argv, flag, exec_opts)
+rest = argv[i:]
+
+args.flags.c
+args.flags.debug_spans
+
+args.options.nounset  # always the long one
+args.options.pipefail
+
+args.rest == argv if not
 
 
-special cases:
-  echo
+spec = args.Spec()
+spec.Arg(1, 'args.Int', 'num')   # for shift
+
+# If args are specified, then it limits errors
+# Otherwise no options
+
+# GOALS: sharing
 
 NOTE: 
 - bash is inconsistent about checking for extra args
@@ -55,27 +81,6 @@ NOTE:
   - it has a no_args() function that isn't called everywhere.  It's not
     declarative.
 
-  #
-  # Is it nicer to do:
-  #
-  # opt, opt_index = my_getopt(argv, 'n')
-  #
-  # opt.n, opt.f
-  # opt.no_newline, opts.c_escape
-  #
-  # FLAG_n
-  # OPT.n
-  # FLAG.n
-  #
-  # flag, opt_index = my_getopt
-  # flag.n
-  #
-  # if flag.n:
-
-  # NOTE: getopt uses a quadratic algorithm!  It calls args[1:] repeatedly.
-  # I guess use this interface for now; rewrite it later.
-  # is optparse better?  It's much longer.  getopt is only 210 lines.
-  # optparse is 1704.  It generates help though.
 """
 
 import sys
