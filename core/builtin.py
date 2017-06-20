@@ -728,6 +728,20 @@ def _Set(argv, exec_opts, mem):
   # source
   # This way they're not global variables.
   # or what about shopt?
+  #
+  # Ways of setting options:
+  #   set -o +o
+  #   shopt -o +o
+  #   shopt -s / shopt -u
+  #
+  # shopt is also a runtime thing, not a delaration.
+  #
+  # PROBLEM:
+  # shopt -s noglob
+  # set -o pipefail
+  # source 'lib.sh'  # behavior is changed.  Although not if you put everything
+  # in functions!  In that case, it's really the settings in main() that matter
+  # (as long as nobody later turns things off.)
 
   # Oil-specific
   if name == 'strict-arith':
