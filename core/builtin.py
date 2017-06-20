@@ -717,6 +717,17 @@ def _Set(argv, exec_opts, mem):
   #   or s="$@"  # osh: join
   #
   # This should be done at the module level.
+  #
+  # Maybe:
+  # option -o foo
+  # option +o foo
+  # But it can only be in a module with all functions?  I don't want the state
+  # to persist.
+  # It's a flag on functions?  Were they defined in a FILE with -o?
+  #
+  # source
+  # This way they're not global variables.
+  # or what about shopt?
 
   # Oil-specific
   if name == 'strict-arith':
