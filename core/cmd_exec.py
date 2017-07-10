@@ -473,6 +473,49 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
+  def _CallableBuiltin(builtin_id, name):
+
+    def builtin_wrapper(*argv, **kw):
+      try:
+        return self._RunBuiltin(builtin_id, argv)
+      except args.UsageError as e:
+        # TODO: Make this message more consistent?
+        util.usage(str(e))
+        return 2 # consistent error code for usage error
+
+    return builtin_wrapper
+
+  def _CallableFunc(self, node):
+
+    def func_wrapper(*argv, **kw):
+      return self.RunFunc(func_node, argv)
+
+    return func_wrapper
+
+  def _CallableExternalProgram(self, name):
+
+    def external_program_wrapper(*argv, **kw):
+      return self.RunFunc(func_node, argv)
+
+    return func_wrapper
+
+  def _LookupCallable(self, name);
+    builtin_id = builtin.Resolve(name)
+    if builtin_id != EBuiltin.NONE:
+      return self._CallableBuiltin(builtin_id)
+
+    # Builtins like 'true' can be redefined as functions.
+    func_node = self.funcs.get(name)
+    if func_node is not None:
+      return self._CallableFunc(func_node)
+
+    builtin_id = builtin.Resolve(name)
+    if builtin_id != EBuiltin.NONE:
+      return self._CallableBuiltin(builtin_id)
+
+    return self._CallableExternalProgram(name)
+
+
   def _RunSimpleCommand(self, argv, environ, fork_external):
     # This happens when you write "$@" but have no arguments.
     if not argv:
