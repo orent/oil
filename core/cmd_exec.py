@@ -507,14 +507,21 @@ class Executor(object):
         status = 2  # consistent error code for usage error
       return status
 
-    if fork_external:
-      thunk = process.ExternalThunk(argv, environ)
-      p = process.Process(thunk)
-      status = p.Run(self.waiter)
-      return status
+    self._RunExteralProgram(self, argv, environ, fork_external)
 
-    # NOTE: Never returns!
-    process.ExecExternalProgram(argv, environ)
+  def _RunExteralProgram(self, argv, environ, fork_external=True):
+    if not fork_external:
+      # Optimization: If this is the end-of-line for this
+      # process and we are executing a program just to wait 
+      # for it and exit passing its exit status then we might
+      # as well replace this process with the executed program.
+      # NOTE: Never returns!
+      process.ExecExternalProgram(argv, environ)
+
+    thunk = process.ExternalThunk(argv, environ)
+    p = process.Process(thunk)
+    status = p.Run(self.waiter)
+    return status
 
   def _MakePipeline(self, node, job_state=None):
     # NOTE: First or last one could use the "main" shell thread.  Doesn't have
