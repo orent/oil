@@ -102,6 +102,7 @@ class Executor(object):
     self.status_lines = status_lines  
     # function space is different than var space.  Not hierarchical.
     self.funcs = funcs
+    self.funcs_body_code = {}
     self.completion = completion
     # Completion hooks, set by 'complete' builtin.
     self.comp_lookup = comp_lookup
@@ -749,6 +750,7 @@ class Executor(object):
       # NOTE: Would it make sense to evaluate the redirects BEFORE entering?
       # It will save time on function calls.
       self.funcs[node.name] = node
+      self.funcs_body_code[node.name] = self._CompileFuncBody(node)
       status = 0
 
     elif node.tag == command_e.If:
@@ -830,6 +832,15 @@ class Executor(object):
     self.mem.last_status = status
 
     return status
+
+  def _CompileFuncBody(self, func_node):
+    import codegen
+
+    def funcbody(globals, locals):
+        assert isinstance(locals, codegen.Scope)
+        self._Execute(func_node.body)
+
+    return codegen.wrappercode(funcbody)
 
   def _Execute(self, node, fork_external=True):
     """
@@ -940,7 +951,9 @@ class Executor(object):
     # Redirects still valid for functions.
     # Here doc causes a pipe and Process(SubProgramThunk).
     try:
-      status = self._Execute(func_node.body)
+      #status = self._Execute(func_node.body)
+      import codegen
+      status = eval(self.funcs_body_code[func_node.name], globals(), codegen.Scope(self.mem))
     except _ControlFlow as e:
       if e.IsReturn():
         status = e.ReturnValue()
