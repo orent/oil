@@ -191,21 +191,21 @@ class Mem(object):
   # Stack
   #
 
-  def Push(self, argv):
+  def Push(self, argv, locals):
     """For function calls."""
-    self.var_stack.append({})
+    self.var_stack.append(locals)
     self.argv_stack.append(_ArgFrame(argv))
 
   def Pop(self):
-    self.var_stack.pop()
     self.argv_stack.pop()
+    return self.var_stack.pop()
 
-  def PushTemp(self):
+  def PushTemp(self, locals):
     """For the temporary scope in 'FOO=bar BAR=baz echo'."""
-    self.var_stack.append({})
+    self.Push(self.argv_stack[-1], locals)
 
   def PopTemp(self):
-    self.var_stack.pop()
+    return self.Pop()
 
   #
   # Argv

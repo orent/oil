@@ -432,29 +432,24 @@ class Executor(object):
       redirects.append(r)
     return redirects
 
-  def _EvalEnv(self, node_env, out_env):
-    """Evaluate environment variable bindings.
+  def _EvalBindings(self, node_env, locals=None, new_flags=(var_flags.Exported,)):
+    """Evaluate named varible bindings passed to function/program.
 
     Args:
       node_env: list of ast.env_pair
-      out_env: mutated.
+      locals: mutated if passed. Allocated if None.
+      new_flags: flags to set on variables
+    Return:
+      new or modified local variable dict
     """
-    # NOTE: Env evaluation is done in new scope so it doesn't persist.  It also
-    # pushes argv.  Don't need that?
-    self.mem.PushTemp()
+    if locals is None:
+        locals = {}
+    self.mem.PushTemp(locals)
     for env_pair in node_env:
       name = env_pair.name
-      rhs = env_pair.val
-
-      # Could pass extra bindings like out_env here?  But PushTemp should work?
-      val = self.ev.EvalWordToString(rhs)
-
-      # Set each var so the next one can reference it.  Example:
-      # FOO=1 BAR=$FOO ls /
-      self.mem.SetVar(ast.LhsName(name), val, (), scope.LocalOnly)
-
-      out_env[name] = val.s
-    self.mem.PopTemp()
+      val = self.ev.EvalWordToString(env_pair.val)
+      self.mem.SetVar(ast.LhsName(name), val, new_flags, scope.LocalOnly)
+    return self.mem.PopTemp()
 
   def _MakeProcess(self, node, job_state=None):
     """
@@ -473,32 +468,32 @@ class Executor(object):
     p = process.Process(thunk, job_state=job_state)
     return p
 
-  def _RunSimpleCommand(self, argv, environ, fork_external):
+  def _RunSimpleCommand(self, argv, locals, fork_external):
     # This happens when you write "$@" but have no arguments.
     if not argv:
       return 0  # status 0, or skip it?
 
-    # TODO: respect the special builtin order too
-    arg0 = argv[0]
+    callable = self._LookupCallable(argv[0])
+    return callable(*argv, **locals)
 
+  def _LookupCallable(self, arg0):
     builtin_id = builtin.ResolveSpecial(arg0)
     if builtin_id != EBuiltin.NONE:
-      try:
-        status = self._RunBuiltin(builtin_id, argv)
-      except args.UsageError as e:
-        # TODO: Make this message more consistent?
-        util.usage(str(e))
-        status = 2  # consistent error code for usage error
-      return status
+      return self._CallableBuiltin(builtin_id)
 
-    # Builtins like 'true' can be redefined as functions.
     func_node = self.funcs.get(arg0)
     if func_node is not None:
-      status = self.RunFunc(func_node, argv)
-      return status
+      return self._CallableFunction(func_node)
 
     builtin_id = builtin.Resolve(arg0)
     if builtin_id != EBuiltin.NONE:
+      return self._CallableBuiltin(builtin_id)
+
+    return self._CallableExternalProgram()
+
+  def _CallableBuiltin(self, builtin_id):
+
+    def callable_builtin_wrapper(*argv, **locals):
       try:
         status = self._RunBuiltin(builtin_id, argv)
       except args.UsageError as e:
@@ -507,21 +502,41 @@ class Executor(object):
         status = 2  # consistent error code for usage error
       return status
 
-    self._RunExteralProgram(self, argv, environ, fork_external)
+    return callable_builtin_wrapper
 
-  def _RunExteralProgram(self, argv, environ, fork_external=True):
-    if not fork_external:
-      # Optimization: If this is the end-of-line for this
-      # process and we are executing a program just to wait 
-      # for it and exit passing its exit status then we might
-      # as well replace this process with the executed program.
-      # NOTE: Never returns!
-      process.ExecExternalProgram(argv, environ)
+  def _CallableFunction(self, func_node):
 
-    thunk = process.ExternalThunk(argv, environ)
-    p = process.Process(thunk)
-    status = p.Run(self.waiter)
-    return status
+     def callable_function_wrapper(*argv, **locals):
+       return self.RunFunc(func_node, argv, locals)
+
+     return callable_function_wrapper
+
+  def _CallableExternalProgram(self):
+   
+     def callable_external_program_wrapper(*argv, **locals):
+        return self._RunExternalProgram(argv, locals)
+
+     return callable_external_program_wrapper
+
+  def _RunExternalProgram(self, argv, locals, fork_external=True):
+    try:
+      self.mem.PushTemp(locals)
+      environ = self.mem.GetExported()
+
+      if not fork_external:
+        # Optimization: If this is the end-of-line for this
+        # process and we are executing a program just to wait 
+        # for it and exit passing its exit status then we might
+        # as well replace this process with the executed program.
+        # NOTE: Never returns!
+        process.ExecExternalProgram(argv, environ)
+
+      thunk = process.ExternalThunk(argv, environ)
+      p = process.Process(thunk)
+      status = p.Run(self.waiter)
+      return status
+    finally:
+      self.mem.PopTemp()
 
   def _MakePipeline(self, node, job_state=None):
     # NOTE: First or last one could use the "main" shell thread.  Doesn't have
@@ -604,8 +619,7 @@ class Executor(object):
       words = braces.BraceExpandWords(node.words)
       argv = self.ev.EvalWordSequence(words)
 
-      environ = self.mem.GetExported()
-      self._EvalEnv(node.more_env, environ)
+      new_locals = self._EvalBindings(node.more_env)
 
       if self.exec_opts.xtrace:
         log('+ %s', argv)
@@ -613,7 +627,7 @@ class Executor(object):
         #print('+ %s' % argv, file=self.XFILE)
         #os.write(2, '+ %s\n' % argv)
 
-      status = self._RunSimpleCommand(argv, environ, fork_external)
+      status = self._RunSimpleCommand(argv, new_locals, fork_external)
 
       if self.exec_opts.xtrace:
         #log('+ %s -> %d', argv, status)
@@ -968,7 +982,7 @@ class Executor(object):
 
     return ''.join(chunks).rstrip('\n')
 
-  def RunFunc(self, func_node, argv):
+  def RunFunc(self, func_node, argv, locals):
     """Used by completion engine."""
     # These are redirects at DEFINITION SITE.  You can also have redirects at
     # the CALLER.  For example:
@@ -980,7 +994,7 @@ class Executor(object):
     if not self.fd_state.Push(def_redirects, self.waiter):
       return 1  # error
 
-    self.mem.Push(argv[1:])
+    self.mem.Push(argv[1:], locals)
 
     # Redirects still valid for functions.
     # Here doc causes a pipe and Process(SubProgramThunk).
