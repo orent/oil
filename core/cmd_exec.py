@@ -32,7 +32,6 @@ from core import builtin
 from core.id_kind import Id, RedirType, REDIR_TYPE, REDIR_DEFAULT_FD
 from core import process
 from core import runtime
-from core import state
 
 from osh import ast_ as ast
 
@@ -494,7 +493,7 @@ class Executor(object):
     pi = self._MakePipeline(node)
 
     pipe_status = pi.Run(self.waiter)
-    state.SetGlobalArray(self.mem, 'PIPESTATUS', [str(p) for p in pipe_status])
+    self.mem.SetGlobalArray('PIPESTATUS', [str(p) for p in pipe_status])
 
     if self.exec_opts.pipefail:
       # The status is that of the last command that is non-zero.
@@ -724,7 +723,7 @@ class Executor(object):
       status = 0  # in case we don't loop
       for x in iter_list:
         #log('> ForEach setting %r', x)
-        state.SetLocalString(self.mem, iter_name, x)
+        self.mem.SetLocalString(iter_name, x)
         #log('<')
 
         try:
