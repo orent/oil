@@ -451,6 +451,12 @@ class Executor(object):
     arg0 = argv[0]
 
     builtin_id = builtin.ResolveSpecial(arg0)
+    if builtin_id == EBuiltin.NONE:
+        # Builtins like 'true' can be redefined as functions.
+        func_node = self.funcs.get(arg0)
+        if func_node is None:
+            builtin_id = builtin.Resolve(arg0)
+
     if builtin_id != EBuiltin.NONE:
       try:
         status = self._RunBuiltin(builtin_id, argv)
@@ -460,21 +466,9 @@ class Executor(object):
         status = 2  # consistent error code for usage error
       return status
 
-    # Builtins like 'true' can be redefined as functions.
-    func_node = self.funcs.get(arg0)
     if func_node is not None:
       # NOTE: Functions could call 'exit 42' directly, etc.
       status = self.RunFunc(func_node, argv)
-      return status
-
-    builtin_id = builtin.Resolve(arg0)
-    if builtin_id != EBuiltin.NONE:
-      try:
-        status = self._RunBuiltin(builtin_id, argv)
-      except args.UsageError as e:
-        # TODO: Make this message more consistent?
-        util.usage(str(e))
-        status = 2  # consistent error code for usage error
       return status
 
     if fork_external:
