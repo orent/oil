@@ -11,7 +11,6 @@ from core import expr_eval
 from core.glob_ import Globber, GlobEscape
 from core.id_kind import Id, Kind, IdName, LookupKind
 from core import runtime
-from core import state
 from core import util
 from osh import ast_ as ast
 
@@ -751,7 +750,7 @@ class _WordPartEvaluator:
               # avoid it.
               rhs_str = _DecayPartValuesToString(new_part_vals,
                                                  _GetJoinChar(self.mem))
-              state.SetLocalString(self.mem, var_name, rhs_str)
+              self.mem.SetLocalString(var_name, rhs_str)
             return new_part_vals
 
           elif effect == Effect.Error:

@@ -176,8 +176,8 @@ class Mem(object):
     # Default value; user may unset it.
     # $ echo -n "$IFS" | python -c 'import sys;print repr(sys.stdin.read())'
     # ' \t\n'
-    SetGlobalString(self, 'IFS', ' \t\n')
-    SetGlobalString(self, 'PWD', os.getcwd())
+    self.SetGlobalString('IFS', ' \t\n')
+    self.SetGlobalString('PWD', os.getcwd())
 
   def _InitEnviron(self, environ):
     # This is the way dash and bash work -- at startup, they turn everything in
@@ -458,31 +458,31 @@ class Mem(object):
     return exported
 
 
-def SetLocalString(mem, name, s):
-  """Set a local string.
+  def SetLocalString(self, name, s):
+    """Set a local string.
 
-  Used for:
-  1) for loop iteration variables
-  2) temporary environments like FOO=bar BAR=$FOO cmd, 
-  3) read builtin
-  """
-  assert isinstance(s, str)
-  mem.SetVar(ast.LhsName(name), runtime.Str(s), (), scope.LocalOnly)
-
-
-def SetGlobalString(mem, name, s):
-  """Helper for completion, $PWD, etc."""
-  assert isinstance(s, str)
-  val = runtime.Str(s)
-  mem.SetVar(ast.LhsName(name), val, (), scope.GlobalOnly)
+    Used for:
+    1) for loop iteration variables
+    2) temporary environments like FOO=bar BAR=$FOO cmd, 
+    3) read builtin
+    """
+    assert isinstance(s, str)
+    self.SetVar(ast.LhsName(name), runtime.Str(s), (), scope.LocalOnly)
 
 
-def SetGlobalArray(mem, name, a):
-  """Helper for completion."""
-  assert isinstance(a, list)
-  mem.SetVar(ast.LhsName(name), runtime.StrArray(a), (), scope.GlobalOnly)
+  def SetGlobalString(self, name, s):
+    """Helper for completion, $PWD, etc."""
+    assert isinstance(s, str)
+    val = runtime.Str(s)
+    self.SetVar(ast.LhsName(name), val, (), scope.GlobalOnly)
 
 
-def GetGlobal(mem, name):
-  assert isinstance(name, str), name
-  return mem.GetVar(name, scope.GlobalOnly)
+  def SetGlobalArray(self, name, a):
+    """Helper for completion."""
+    assert isinstance(a, list)
+    self.SetVar(ast.LhsName(name), runtime.StrArray(a), (), scope.GlobalOnly)
+
+
+  def GetGlobal(self, name):
+    assert isinstance(name, str), name
+    return self.GetVar(name, scope.GlobalOnly)

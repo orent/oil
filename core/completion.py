@@ -41,7 +41,6 @@ import traceback
 from osh import ast_ as ast
 from osh import parse_lib
 from core import runtime
-from core import state
 from core import ui
 from core import util
 from core.id_kind import Id
@@ -207,13 +206,13 @@ class ShellFuncAction(CompletionAction):
     # reply = []
     # self.ex.GetArray(reply)
 
-    state.SetGlobalArray(self.ex.mem, 'COMP_WORDS', words)
-    state.SetGlobalString(self.ex.mem, 'COMP_CWORD', str(index))
+    self.ex.mem.SetGlobalArray('COMP_WORDS', words)
+    self.ex.mem.SetGlobalString('COMP_CWORD', str(index))
 
     self.ex.RunFunc(self.func, [])  # call with no arguments
 
     # Should be COMP_REPLY to follow naming convention!  Lame.
-    val = state.GetGlobal(self.ex.mem, 'COMPREPLY')
+    val = self.ex.mem.GetGlobal('COMPREPLY')
     if val.tag == value_e.Undef:
       log('COMPREPLY not defined')
       return
