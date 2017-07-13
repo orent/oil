@@ -33,10 +33,45 @@ pipefail() {
   echo 'SHOULD NOT GET HERE'
 }
 
-# Other errors: permission denied for >, etc.
-# Hm this is not fatal unless set -o errexit.
-nonexistent() {
-  cat < nonexistent.txt
+# TODO: point to 'f'
+pipefail-func() {
+  set -o errexit -o pipefail
+  f() {
+    cat
+    exit 42
+  }
+  echo hi | f | wc
+
+  echo 'SHOULD NOT GET HERE'
+}
+
+# TODO: point to {.  It's the same sas a subshell so you don't know exactly
+# which command failed.
+pipefail-group() {
+  set -o errexit -o pipefail
+  echo hi | { cat; exit 42; } | wc
+
+  echo 'SHOULD NOT GET HERE'
+}
+
+# TODO: point to (
+pipefail-subshell() {
+  set -o errexit -o pipefail
+  echo hi | (cat; exit 42) | wc
+
+  echo 'SHOULD NOT GET HERE'
+}
+
+# TODO: point to 'while'
+pipefail-while() {
+  set -o errexit -o pipefail
+  seq 3 | while true; do
+    read line
+    echo X $line X
+    if test "$line" = 2; then
+      exit 42
+    fi
+  done | wc
 
   echo 'SHOULD NOT GET HERE'
 }
@@ -151,7 +186,9 @@ all() {
   _run_test control_flow 
 
   for t in \
-    no_such_command failed_command pipefail nonexistent nounset \
+    no_such_command failed_command \
+    pipefail pipefail-group pipefail-subshell pipefail-func pipefail-while \
+    nonexistent nounset \
     nounset_arith divzero divzero_var \
     string_to_int_arith string_to_hex string_to_octal \
     string_to_intbase string_to_int_bool; do
