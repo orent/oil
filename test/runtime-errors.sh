@@ -33,12 +33,13 @@ pipefail() {
   echo 'SHOULD NOT GET HERE'
 }
 
-# TODO: point to 'f'
 pipefail-func() {
   set -o errexit -o pipefail
   f() {
     cat
-    exit 42
+    # NOTE: If you call 'exit 42', there is no error message displayed!
+    #exit 42
+    return 42
   }
   echo hi | f | wc
 
@@ -49,7 +50,7 @@ pipefail-func() {
 # which command failed.
 pipefail-group() {
   set -o errexit -o pipefail
-  echo hi | { cat; exit 42; } | wc
+  echo hi | { cat; sh -c 'exit 42'; } | wc
 
   echo 'SHOULD NOT GET HERE'
 }
@@ -57,7 +58,7 @@ pipefail-group() {
 # TODO: point to (
 pipefail-subshell() {
   set -o errexit -o pipefail
-  echo hi | (cat; exit 42) | wc
+  echo hi | (cat; sh -c 'exit 42') | wc
 
   echo 'SHOULD NOT GET HERE'
 }
@@ -69,11 +70,19 @@ pipefail-while() {
     read line
     echo X $line X
     if test "$line" = 2; then
-      exit 42
+      sh -c 'exit 42'
     fi
   done | wc
 
   echo 'SHOULD NOT GET HERE'
+}
+
+# Multiple errors from multiple processes
+pipefail-multiple() {
+  set -o errexit -o pipefail
+  { echo 'four'; sh -c 'exit 4'; } |
+  { echo 'five'; sh -c 'exit 5'; } |
+  { echo 'six'; sh -c 'exit 6'; }
 }
 
 # NOTE: This prints a WARNING in bash.  Not fatal in any shell except zsh.
