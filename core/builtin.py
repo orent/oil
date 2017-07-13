@@ -32,7 +32,6 @@ import sys
 from core import args
 from core import runtime
 from core import util
-from core import state
 
 from osh import lex
 
@@ -339,7 +338,7 @@ def Wait(argv, waiter, job_state, mem):
     st = job.WaitUntilDone(waiter)
     if isinstance(st, list):
       status = st[-1]
-      state.SetGlobalArray(mem, 'PIPESTATUS', [str(p) for p in st])
+      mem.SetGlobalArray('PIPESTATUS', [str(p) for p in st])
     else:
       status = st
 
@@ -379,7 +378,7 @@ def Read(argv, mem):
       s = strs[i]
     except IndexError:
       s = ''  # if there are too many variables
-    state.SetLocalString(mem, names[i], s)
+    mem.SetLocalString(names[i], s)
 
   return status
 
@@ -416,9 +415,9 @@ def _Cd(argv, mem):
       raise AssertionError('Invalid OLDPWD')
 
   # Save OLDPWD.
-  state.SetGlobalString(mem, 'OLDPWD', os.getcwd())
+  mem.SetGlobalString('OLDPWD', os.getcwd())
   os.chdir(dest_dir)
-  state.SetGlobalString(mem, 'PWD', dest_dir)
+  mem.SetGlobalString('PWD', dest_dir)
   return 0
 
 
