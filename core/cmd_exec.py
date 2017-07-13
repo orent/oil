@@ -455,6 +455,7 @@ class Executor(object):
     # Builtins like 'true' can be redefined as functions.
     func_node = self.funcs.get(arg0)
     if func_node is not None:
+      # NOTE: Functions could call 'exit 42' directly, etc.
       status = self.RunFunc(func_node, argv)
       return status
 

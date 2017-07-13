@@ -33,12 +33,13 @@ pipefail() {
   echo 'SHOULD NOT GET HERE'
 }
 
-# TODO: point to 'f'
 pipefail-func() {
   set -o errexit -o pipefail
   f() {
     cat
-    exit 42
+    # NOTE: If you call 'exit 42', there is no error message displayed!
+    #exit 42
+    return 42
   }
   echo hi | f | wc
 
