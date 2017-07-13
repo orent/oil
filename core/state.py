@@ -191,21 +191,22 @@ class Mem(object):
   # Stack
   #
 
-  def Push(self, argv):
-    """For function calls."""
-    self.var_stack.append({})
-    self.argv_stack.append(_ArgFrame(argv))
+  def Push(self, argv=None, locals=None):
+    """ Set new active local variable context. May be pre-populated. """
+    if locals is None:
+        locals = {}
+    if argv is None:
+        argframe = self.argv_stack[-1]
+    else:
+        argframe = _ArgFrame(argv) 
+
+    self.var_stack.append(locals)
+    self.argv_stack.append(argframe)
 
   def Pop(self):
-    self.var_stack.pop()
+    """ Restore previous local variable context, returning current one. """
     self.argv_stack.pop()
-
-  def PushTemp(self):
-    """For the temporary scope in 'FOO=bar BAR=baz echo'."""
-    self.var_stack.append({})
-
-  def PopTemp(self):
-    self.var_stack.pop()
+    return self.var_stack.pop()
 
   #
   # Argv

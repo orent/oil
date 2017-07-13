@@ -401,7 +401,13 @@ class Executor(object):
     """
     # NOTE: Env evaluation is done in new scope so it doesn't persist.  It also
     # pushes argv.  Don't need that?
-    self.mem.PushTemp()
+    #
+    # orent: No, we don't need that. But it doesn't hurt that Push duplicates
+    # the argv frame here because argv cannot be modified in this context.
+    # The only thing that could call shift/set here (EvalCommandSub) is executed
+    # in a subshell.
+
+    self.mem.Push()
     for env_pair in node_env:
       name = env_pair.name
       rhs = env_pair.val
@@ -414,7 +420,7 @@ class Executor(object):
       self.mem.SetVar(ast.LhsName(name), val, (), scope.LocalOnly)
 
       out_env[name] = val.s
-    self.mem.PopTemp()
+    self.mem.Pop()
 
   def _MakeProcess(self, node, job_state=None):
     """
