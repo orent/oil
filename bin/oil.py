@@ -366,10 +366,9 @@ def OshMain(argv):
 
       #util.log("Execution skipped because 'noexec' is on ")
       status = 0
-
     if do_exec:
-      tlog('Execute(node)')
-      status = ex.Execute(node)
+      tlog('ExecuteAndExit(node)')
+      ex.ExecuteAndExit(node)
 
   return status
 

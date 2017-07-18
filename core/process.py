@@ -290,10 +290,7 @@ class SubProgramThunk:
     self.node = node
 
   def Run(self):
-    # NOTE: may NOT return due to exec().
-    status = self.ex.Execute(self.node, fork_external=False)
-    sys.exit(status)  # Must exit!
-
+    self.ex.ExecuteAndExit(self.node)
 
 class _HereDocWriterThunk(Thunk):
   """Write a here doc to one end of a pipe.

@@ -587,7 +587,7 @@ class Executor(object):
 
     elif node.tag == command_e.Sentence:
       if node.terminator.id == Id.Op_Semi:
-        status = self._Execute(node.child)
+        status = self._Execute(node.child, fork_external)
       else:
         status = self._RunJobInBackground(node.child)
 
@@ -670,7 +670,7 @@ class Executor(object):
     # The only difference between these two is that CommandList has no
     # redirects.  We already took care of that above.
     elif node.tag in (command_e.CommandList, command_e.BraceGroup):
-      status = self._ExecuteList(node.children)
+      status = self._ExecuteList(node.children, fork_external)
 
     elif node.tag == command_e.AndOr:
       #print(node.children)
@@ -685,10 +685,10 @@ class Executor(object):
 
       if node.op_id == Id.Op_DPipe:
         if status != 0:
-          status = self._Execute(right)
+          status = self._Execute(right, fork_external)
       elif node.op_id == Id.Op_DAmp:
         if status == 0:
-          status = self._Execute(right)
+          status = self._Execute(right, fork_external)
       else:
         raise AssertionError
 
@@ -772,12 +772,12 @@ class Executor(object):
           self._PopErrExit()
 
         if status == 0:
-          status = self._ExecuteList(arm.action)
+          status = self._ExecuteList(arm.action, fork_external)
           done = True
           break
       # TODO: The compiler should flatten this
       if not done and node.else_action is not None:
-        status = self._ExecuteList(node.else_action)
+        status = self._ExecuteList(node.else_action, fork_external)
 
     elif node.tag == command_e.NoOp:
       status = 0  # make it true
@@ -842,9 +842,16 @@ class Executor(object):
     """
     Args:
       node: of type AstNode
-      fork_external: if we get a SimpleCommand that is an external command,
-        should we fork first?  This is disabled in the context of a pipeline
-        process and a subshell.
+      fork_external: when True, this method is expected to return its
+        status normally as the method result. If it wishes to execute an
+        external program it must fork, wait for the process to terminate
+        and return its exit status.
+        When False, the caller is signalling that the next thing it is
+        about to do is call sys.exit() with the result of this method.
+        If the last command performed by this code is running an external
+        program then it is allowed instead to execute it, replacing the
+        current process image and passing its exit status directly to the
+        parent process.
     """
     # No redirects to evaluate.
     # NOTE: Function definitions have redirects, but we do NOT want to evaluate
@@ -875,10 +882,13 @@ class Executor(object):
     self.mem.last_status = status  # TODO: This is somewhat duplicated
     return status
 
-  def _ExecuteList(self, children):
+  def _ExecuteList(self, children, fork_external=True):
     status = 0  # for empty list
+    remaining = len(children)
     for child in children:
-      status = self._Execute(child)  # last status wins
+      remaining -= 1
+      # Last command in the list may be allowed to directly exec:
+      status = self._Execute(child, remaining != 0 or fork_external)
     return status
 
   def Execute(self, node, fork_external=True):
@@ -900,6 +910,10 @@ class Executor(object):
     #print('break / continue can only be used inside loop')
     #status = 129  # TODO: Fix this.  Use correct macros
     return status
+
+  def ExecuteAndExit(self, node):
+    """ Never returns. """
+    sys.exit(self.Execute(node, fork_external=False))
 
   def RunCommandSub(self, node):
     p = self._MakeProcess(node)
