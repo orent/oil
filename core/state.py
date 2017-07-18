@@ -294,6 +294,15 @@ class Mem(object):
     else: 
       raise AssertionError(lookup_mode)
 
+  def MergeVars(self, scope):
+    """
+    Args:
+        scope: a string -> runtime.cell dict
+    Values in scope are assumed to have been already checked for readonly, etc
+    and are merged into current variables scope.
+    """
+    self.var_stack[-1].update(scope)
+
   def SetVar(self, lval, value, new_flags, lookup_mode):
     """
     Args:
