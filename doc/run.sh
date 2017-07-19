@@ -92,8 +92,9 @@ EOF
   echo "Wrote $html_out"
 }
 
-install() {
-  local out=_tmp/doc/install.html
+markdown2html() {
+  local src=$1
+  local out=$2
   mkdir -p _tmp/doc
 
   { cat <<EOF
@@ -113,12 +114,20 @@ install() {
   </head>
   <body>
 EOF
-    cat INSTALL | markdown  # TODO: CommonMark
+    markdown < $src  # TODO: CommonMark
     cat <<EOF
   </body>
 </html>
 EOF
   } > $out
+}
+
+install() {
+  markdown2html INSTALL _tmp/doc/INSTALL.html
+}
+
+index() {
+  markdown2html doc/index.md _tmp/doc/index.html
 }
 
 # TODO: TOC is one doc?  Maybe use Makefile.
