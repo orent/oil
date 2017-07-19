@@ -30,7 +30,8 @@ System Requirements
 Roughly speaking, you need a POSIX C environment (compiler and libc), plus GNU
 Bash and GNU Make.
 
-I want to eventually remove the GNU requirements and use just POSIX sh intsead.
+(I want to eventually remove the GNU requirements and require just POSIX sh
+instead).
 
 Optional:
 
@@ -62,18 +63,18 @@ options are --prefix and --{with,without}-readline.
 Notes
 -----
 
-- The oil executable behaves like busybox.  If it's run directly, then argv[1]
-  should be the name of a program:
+(1) The oil executable behaves like busybox.  If it's run directly, then
+argv[1] should be the name of a program:
 
     /usr/local/bin/oil osh -c 'echo hi'
  
-  If it's invoked through a symlink like 'osh', then that is treated as the
-  name of a program:
+If it's invoked through a symlink like 'osh', then that is treated as the name
+of a program:
 
-    /usr/local/bin/osh -c 'echo hi'
+      /usr/local/bin/osh -c 'echo hi'
 
-- OSH uses a slight fork of the Python 2.7 runtime.  It should therefore
-  compile on with most compilers and operating systems.
+(2) OSH uses a slight fork of the Python 2.7 runtime.  It should therefore
+compile on with most compilers and operating systems.
 
 
 TODO

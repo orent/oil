@@ -39,7 +39,7 @@ publish() {
 }
 
 osh-quick-ref() {
-  local html_out=_tmp/osh-quick-ref.html
+  local html_out=_tmp/doc/osh-quick-ref.html
   local text_dir=_build/osh-quick-ref
 
   local py_out=_build/osh_help.py
@@ -90,6 +90,35 @@ EOF
   } > $html_out
 
   echo "Wrote $html_out"
+}
+
+install() {
+  local out=_tmp/doc/install.html
+  mkdir -p _tmp/doc
+
+  { cat <<EOF
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0 auto;
+        width: 40em;
+      }
+      pre {
+        color: green;
+        margin-left: 4em;
+      }
+    </style>
+  </head>
+  <body>
+EOF
+    cat INSTALL | markdown  # TODO: CommonMark
+    cat <<EOF
+  </body>
+</html>
+EOF
+  } > $out
 }
 
 # TODO: TOC is one doc?  Maybe use Makefile.
